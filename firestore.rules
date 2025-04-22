@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read access to all documents for authenticated users
+    match /{document=**} {
+      allow read: if request.auth != null;
+    }
+    
+    // Allow users to create and update their own user documents
+    match /users/{userId} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Event rules
+    match /events/{eventId} {
+      // Allow authenticated users to read events
+      allow read: if request.auth != null;
+      
+      // Allow authenticated users to create events
+      allow create: if request.auth != null;
+      
+      // Allow only the creator to update or delete their events
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.creatorId;
+      
+      // Allow access to the rsvps subcollection
+      match /rsvps/{rsvpId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == rsvpId;
+      }
+      
+      // Allow access to the ratings subcollection
+      match /ratings/{ratingId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == ratingId;
+      }
+    }
+  }
+}
